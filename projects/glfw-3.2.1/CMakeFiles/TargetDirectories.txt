@@ -1,0 +1,6 @@
+Z:/visual_studio/template/projects/glfw-3.2.1/CMakeFiles/uninstall.dir
+Z:/visual_studio/template/projects/glfw-3.2.1/CMakeFiles/INSTALL.dir
+Z:/visual_studio/template/projects/glfw-3.2.1/CMakeFiles/ALL_BUILD.dir
+Z:/visual_studio/template/projects/glfw-3.2.1/CMakeFiles/ZERO_CHECK.dir
+Z:/visual_studio/template/projects/glfw-3.2.1/src/CMakeFiles/glfw.dir
+Z:/visual_studio/template/projects/glfw-3.2.1/src/CMakeFiles/INSTALL.dir
