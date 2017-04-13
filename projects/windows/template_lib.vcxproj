@@ -103,7 +103,7 @@
       <AdditionalLibraryDirectories>Z:\visual_studio\template\projects\glfw-3.2.1\src\Debug;Z:\visual_studio\template\projects\glew-2.0.0\lib\Debug\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glew32d.lib;glfw3dll.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <NoEntryPoint>false</NoEntryPoint>
-      <AdditionalOptions>/EXPORT:InitGame /EXPORT:RenderAndUpdate %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/EXPORT:InitGame /EXPORT:RenderAndUpdate /EXPORT:Teardown %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

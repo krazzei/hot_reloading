@@ -18,13 +18,14 @@ const char* fragmentSource = "#version 120\n"
 "	gl_FragColor = vec4(1, 0, 0, 0);\n"
 "}";
 
-GLuint program;
-GLuint attribPosition;
-GLuint vertexArray;
-GLuint transformPosition;
-glm::mat4 transform;
+float vertex[9] = { -0.8f, -0.8f, 0,
+0, 0.8f, 0,
+0.8f, -0.8f, 0 };
 
-bool CompileShader(void)
+const GLchar *positionName = "position";
+const GLchar *transformName = "transform";
+
+bool CompileShader(render_stuff *RenderStuff)
 {
 	GLint compile_ok = GL_FALSE;
 	GLint link_ok = GL_FALSE;
@@ -35,6 +36,7 @@ bool CompileShader(void)
 	glGetShaderiv(vs, GL_COMPILE_STATUS, &compile_ok);
 	if (!compile_ok)
 	{
+		glDeleteShader(vs);
 		GLint maxLength = 0;
 		glGetShaderiv(vs, GL_INFO_LOG_LENGTH, &maxLength);
 
@@ -50,53 +52,56 @@ bool CompileShader(void)
 	glGetShaderiv(fs, GL_COMPILE_STATUS, &compile_ok);
 	if (!compile_ok)
 	{
+		glDeleteShader(vs);
+		glDeleteShader(fs);
 		std::cerr << "Error in fragment shader" << std::endl;
 		return false;
 	}
 
-	program = glCreateProgram();
-	glAttachShader(program, vs);
-	glAttachShader(program, fs);
-	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &link_ok);
+	RenderStuff->program = glCreateProgram();
+	glAttachShader(RenderStuff->program, vs);
+	glAttachShader(RenderStuff->program, fs);
+	glLinkProgram(RenderStuff->program);
+	glGetProgramiv(RenderStuff->program, GL_LINK_STATUS, &link_ok);
 	if (!link_ok)
 	{
+		glDeleteProgram(RenderStuff->program);
+		glDeleteShader(vs);
+		glDeleteShader(fs);
 		std::cerr << "Error in glLinkProgram" << std::endl;
 		return false;
 	}
 
-	attribPosition = glGetAttribLocation(program, "position");
-	if (attribPosition == -1)
+	RenderStuff->attribPosition = glGetAttribLocation(RenderStuff->program, positionName);
+	if (RenderStuff->attribPosition == -1)
 	{
 		std::cerr << "Could not bind attribute position" << std::endl;
 		return false;
 	}
 
-	transformPosition = glGetUniformLocation(program, "transform");
-	if (transformPosition == -1)
+	RenderStuff->transformPosition = glGetUniformLocation(RenderStuff->program, transformName);
+	if (RenderStuff->transformPosition == -1)
 	{
 		std::cerr << "Could not bind attribute transform" << std::endl;
 	}
+
+	glDeleteShader(vs);
+	glDeleteShader(fs);
 
 	return true;
 }
 
 extern "C" GAME_INIT(InitGame)
 {
-	float vertex[9] = { -0.8f, -0.8f, 0,
-		0, 0.8f, 0,
-		0.8f, -0.8f, 0 };
-
-	transform = glm::mat4();
-	transform = glm::translate(transform, glm::vec3(0, 0, 0));
+	State->triangle->transform = glm::mat4();
+	State->triangle->transform = glm::translate(State->triangle->transform, glm::vec3(0, 0, 0));
 
 	// TODO: check openGL version
-	vertexArray;
-	glCreateBuffers(1, &vertexArray);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexArray);
+	glCreateBuffers(1, &State->triangle->vertexArray);
+	glBindBuffer(GL_ARRAY_BUFFER, State->triangle->vertexArray);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 9, &vertex, GL_STATIC_DRAW);
 
-	if (!CompileShader())
+	if (!CompileShader(State->triangle))
 	{
 		return false;
 	}
@@ -110,15 +115,21 @@ extern "C" GAME_RENDER_AND_UPDATE(RenderAndUpdate)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glUseProgram(program);
-	glUniformMatrix4fv(transformPosition, 1, GL_FALSE, &transform[0][0]);
+	glUseProgram(State->triangle->program);
+	glUniformMatrix4fv(State->triangle->transformPosition, 1, GL_FALSE, &State->triangle->transform[0][0]);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vertexArray);
-	glEnableVertexAttribArray(attribPosition);
-	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, 0, (char*)NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, State->triangle->vertexArray);
+	glEnableVertexAttribArray(State->triangle->attribPosition);
+	glVertexAttribPointer(State->triangle->attribPosition, 3, GL_FLOAT, GL_FALSE, 0, (char*)NULL);
 
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	glDisableVertexAttribArray(attribPosition);
+	glDisableVertexAttribArray(State->triangle->attribPosition);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+extern "C" GAME_TEARDOWN(Teardown)
+{
+	glDeleteBuffers(1, &State->triangle->vertexArray);
+	glDeleteProgram(State->triangle->program);
 }

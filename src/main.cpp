@@ -11,10 +11,19 @@
 
 #include "template.h"
 
+#define Kilobytes(value) value * 1024
+#define Megabytes(value) Kilobytes(value) * 1024
+#define Gigabytes(value) Megabytes(value) * 1024
+
 FILETIME lastLoadTime;
 
 game_init* funcInitGame;
 game_render_and_update* funcRenderAndUpdate;
+game_teardown* funcTeardown;
+
+game_memory GameMemory;
+
+game_state GameState;
 
 int RemoveFileFromPath(char *in_str)
 {
@@ -80,6 +89,7 @@ HINSTANCE LoadGameLibrary()
 
 	funcInitGame = (game_init*)GetProcAddress(lib, "InitGame");
 	funcRenderAndUpdate = (game_render_and_update*)GetProcAddress(lib, "RenderAndUpdate");
+	funcTeardown = (game_teardown*)GetProcAddress(lib, "Teardown");
 
 	return lib;
 }
@@ -118,9 +128,18 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
 	}
 
+	GameMemory = {};
+
+	GameMemory.MemorySize = Megabytes(100);
+	GameMemory.Memory = VirtualAlloc(0, GameMemory.MemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+	GameState = {};
+
+	GameState.triangle = (render_stuff*)GameMemory.Memory;
+
 	HINSTANCE GameLib = LoadGameLibrary();
 
-	funcInitGame();
+	funcInitGame(&GameMemory, &GameState);
 	
 	glfwSwapInterval(1);
 
@@ -133,18 +152,17 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			FreeLibrary(GameLib);
 			GameLib = LoadGameLibrary();
 
-			funcInitGame();
-
 			frameCount = 0;
 		}
 
-		funcRenderAndUpdate();
+		funcRenderAndUpdate(&GameState);
 
 		glfwSwapBuffers(window);
 
 		glfwPollEvents();
 	}
 
+	funcTeardown(&GameState);
 	FreeLibrary(GameLib);
 	glfwTerminate();
 	return 0;
